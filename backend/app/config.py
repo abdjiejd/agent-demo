@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "root"
     MYSQL_PASSWORD: str = "PaiSmart2025"
-    MYSQL_DATABASE: str = "diagram_ai"
+    MYSQL_DATABASE: str = "chat_demo"
 
     # Ark LLM
     ARK_API_KEY: str = Field(default="", alias="api_key")

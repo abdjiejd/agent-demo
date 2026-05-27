@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.session import engine
 from app.database.models import Base
-from app.midlware.fingerprint import FingerprintMiddleware
+from app.middleware.fingerprint import FingerprintMiddleware
 from app.routers import users
 from app.routers import chat as chat_router
 
@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Diagram AI", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Chat Demo", version="0.1.0", lifespan=lifespan)
 
 # CORS - 允许前端开发服务器
 app.add_middleware(

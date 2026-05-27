@@ -6,11 +6,13 @@
 # Claude Code
 .claude/
 
+# 残留文件
+backend/=1.68.0
+
 # Python
 backend/venv/
-backend/__pycache__/
-backend/*.pyc
-backend/.Python
+__pycache__/
+*.pyc
 
 # Node.js
 frontend/node_modules/
