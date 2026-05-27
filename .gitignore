@@ -1,0 +1,18 @@
+# 环境配置
+.env
+.env.local
+.env.*.local
+
+# Claude Code
+.claude/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.Python
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
