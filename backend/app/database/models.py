@@ -28,6 +28,20 @@ class ChatSession(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
 
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fingerprint = Column(String(64), ForeignKey("anonymous_users.fingerprint"), nullable=False, unique=True, index=True)
+    username = Column(String(50), nullable=True)
+    email = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    avatar = Column(String(255), nullable=True)
+    bio = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 

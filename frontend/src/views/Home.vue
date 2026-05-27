@@ -1,20 +1,31 @@
 <script setup lang="ts">
-import { onMounted, computed } from "vue"
+import { onMounted, computed, ref } from "vue"
 import { useRouter } from "vue-router"
 import { useUserStore } from "@/stores/user"
 import { useChatStore, type ChatSession } from "@/stores/chat"
+import { useProfileStore, type UserProfile } from "@/stores/profile"
 import { useFingerprint } from "@/composables/useFingerprint"
+import { ElMessage } from "element-plus"
 
 const router = useRouter()
 const store = useUserStore()
 const chatStore = useChatStore()
+const profileStore = useProfileStore()
 const { getDeviceId } = useFingerprint()
+
+const editDialogVisible = ref(false)
+const editForm = ref({
+  username: "",
+  email: "",
+  phone: "",
+  bio: "",
+})
 
 onMounted(async () => {
   if (!store.initialized) {
     await store.init()
   }
-  await chatStore.fetchSessions()
+  await Promise.all([chatStore.fetchSessions(), profileStore.fetchProfile()])
 })
 
 const totalMessages = computed(() =>
@@ -28,6 +39,31 @@ const daysActive = computed(() => {
   return Math.max(1, Math.floor((now.getTime() - first.getTime()) / 86400000))
 })
 
+function openEditDialog() {
+  const p = profileStore.profile
+  editForm.value = {
+    username: p?.username || "",
+    email: p?.email || "",
+    phone: p?.phone || "",
+    bio: p?.bio || "",
+  }
+  editDialogVisible.value = true
+}
+
+async function saveProfile() {
+  try {
+    await profileStore.updateProfile({
+      username: editForm.value.username || null,
+      email: editForm.value.email || null,
+      phone: editForm.value.phone || null,
+      bio: editForm.value.bio || null,
+    })
+    editDialogVisible.value = false
+    ElMessage.success("资料已保存")
+  } catch {
+    ElMessage.error("保存失败")
+  }
+}
 </script>
 
 <template>
@@ -36,7 +72,7 @@ const daysActive = computed(() => {
     <div class="profile-header">
       <div class="avatar">{{ (store.userInfo?.fingerprint || "U").slice(-2).toUpperCase() }}</div>
       <div class="profile-meta">
-        <h2>我的设备</h2>
+        <h2>{{ profileStore.profile?.username || "我的设备" }}</h2>
         <div class="device-id">{{ store.userInfo?.fingerprint || "加载中..." }}</div>
         <div class="member-since" v-if="store.userInfo?.first_seen">
           加入时间：{{ new Date(store.userInfo.first_seen).toLocaleDateString() }}
@@ -69,6 +105,36 @@ const daysActive = computed(() => {
         </el-card>
       </div>
 
+      <!-- Profile info card -->
+      <el-card shadow="never" class="section-card">
+        <template #header>
+          <div class="section-header">
+            <span>个人资料</span>
+            <el-button text type="primary" size="small" @click="openEditDialog">
+              编辑
+            </el-button>
+          </div>
+        </template>
+        <div class="profile-fields">
+          <div class="field-row">
+            <span class="field-label">用户名</span>
+            <span class="field-value">{{ profileStore.profile?.username || "未设置" }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">邮箱</span>
+            <span class="field-value">{{ profileStore.profile?.email || "未设置" }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">手机</span>
+            <span class="field-value">{{ profileStore.profile?.phone || "未设置" }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">简介</span>
+            <span class="field-value">{{ profileStore.profile?.bio || "未设置" }}</span>
+          </div>
+        </div>
+      </el-card>
+
       <!-- Recent sessions -->
       <el-card shadow="never" class="section-card">
         <template #header>
@@ -98,10 +164,31 @@ const daysActive = computed(() => {
 
       <!-- Actions -->
       <div class="actions">
-        <el-button size="small" plain @click="store.fetchUserInfo(); chatStore.fetchSessions()">刷新</el-button>
+        <el-button size="small" plain @click="store.fetchUserInfo(); chatStore.fetchSessions(); profileStore.fetchProfile()">刷新</el-button>
       </div>
-
     </template>
+
+    <!-- Edit profile dialog -->
+    <el-dialog v-model="editDialogVisible" title="编辑个人资料" width="420px" :close-on-click-modal="false">
+      <el-form :model="editForm" label-width="60px">
+        <el-form-item label="用户名">
+          <el-input v-model="editForm.username" placeholder="请输入用户名" maxlength="50" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="editForm.email" placeholder="请输入邮箱" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="手机">
+          <el-input v-model="editForm.phone" placeholder="请输入手机号" maxlength="20" />
+        </el-form-item>
+        <el-form-item label="简介">
+          <el-input v-model="editForm.bio" type="textarea" :rows="3" placeholder="写一句话介绍自己" maxlength="200" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="profileStore.loading" @click="saveProfile">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -179,6 +266,30 @@ const daysActive = computed(() => {
   justify-content: space-between;
   align-items: center;
 }
+
+/* Profile fields */
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.field-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+.field-label {
+  width: 60px;
+  font-size: 13px;
+  color: #909399;
+  flex-shrink: 0;
+}
+.field-value {
+  font-size: 14px;
+  color: #303133;
+}
+
+/* Session rows */
 .session-row {
   display: flex;
   align-items: center;

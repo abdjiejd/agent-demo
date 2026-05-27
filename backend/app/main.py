@@ -8,6 +8,7 @@ from app.database.models import Base
 from app.middleware.fingerprint import FingerprintMiddleware
 from app.routers import users
 from app.routers import chat as chat_router
+from app.routers import profiles
 
 
 @asynccontextmanager
@@ -36,3 +37,4 @@ app.add_middleware(FingerprintMiddleware)
 # 路由
 app.include_router(users.router)
 app.include_router(chat_router.router)
+app.include_router(profiles.router)
