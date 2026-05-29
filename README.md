@@ -75,13 +75,13 @@
 创建 MySQL 数据库：
 
 ```sql
-CREATE DATABASE IF NOT EXISTS chat_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS data_agent CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 表结构在启动时自动创建，也可手动导入：
 
 ```bash
-mysql -h your-host -u your-user -p chat_demo < sql/chat_demo_schema.sql
+mysql -h your-host -u your-user -p data_agent < sql/chat_demo_schema.sql
 ```
 
 ### 2. 后端
@@ -96,10 +96,10 @@ pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env 填入数据库和 API 密钥
 
-uvicorn app.main:app --host 0.0.0.0 --port 8765 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-接口文档自动生成：访问 `http://localhost:8765/docs`
+接口文档自动生成：访问 `http://localhost:8080/docs`
 
 ### 3. 前端
 
@@ -109,8 +109,25 @@ npm install
 npm run dev
 ```
 
-访问 `http://localhost:5173`
+访问 `http://localhost:8081`
 
 ## 配置说明
 
 后端配置通过环境变量或 `.env` 文件读取，参考 [backend/.env.example](backend/.env.example)。
+
+## 启动命令
+
+### 后端
+
+```bash
+cd backend
+venv\Scripts\activate     # Windows 激活虚拟环境
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+### 前端
+
+```bash
+cd frontend
+npm run dev
+```
