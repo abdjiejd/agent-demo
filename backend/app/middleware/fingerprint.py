@@ -8,8 +8,8 @@ from app.database.models import AnonymousUser
 
 class FingerprintMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # 跳过 /docs /openapi.json 等接口文档路由
-        if request.url.path in ("/docs", "/openapi.json", "/redoc"):
+        # 跳过预检请求和接口文档路由
+        if request.method == "OPTIONS" or request.url.path in ("/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
         fingerprint = request.headers.get("X-Device-Id")
