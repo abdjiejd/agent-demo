@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 
 
 @tool
@@ -22,15 +22,15 @@ async def get_weather(city: str) -> dict[str, Any]:
 
 # All available tools
 _TOOLS = [get_weather]
-_TOOL_REGISTRY: dict[str, Any] = {t.name: t for t in _TOOLS}
+_TOOL_REGISTRY: dict[str, BaseTool] = {t.name: t for t in _TOOLS}
 
 
-def get_tools() -> list[Any]:
+def get_tools() -> list[BaseTool]:
     """Return LangChain tool objects for binding to a model."""
     return _TOOLS
 
 
-def get_tool_by_name(name: str) -> Any:
+def get_tool_by_name(name: str) -> BaseTool:
     """Look up a LangChain tool by name."""
     tool_obj = _TOOL_REGISTRY.get(name)
     if tool_obj is None:

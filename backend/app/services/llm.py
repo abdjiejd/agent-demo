@@ -5,6 +5,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages.tool import ToolCall
 from langchain_openai import ChatOpenAI
 
 from app.config import settings
@@ -46,53 +47,80 @@ async def stream_chat_with_tools(
 ) -> AsyncIterator[str]:
     """Stream a chat response with tool-calling support.
 
-    Phase 1 — non-streaming tool-calling loop:
-        If the model decides to call tools, execute them and feed results back
-        until the model returns a plain-text response (or max rounds reached).
+    Phase 1 streams the model response and collects tool_calls on the fly.
+    If the model calls tools, they are executed and the loop continues.
 
-        When the model returns a plain-text answer directly (no tool call was
-        needed), yield its content straight away — no need to re-invoke.
+    Phase 2 streams any final plain-text answer directly.
 
-    Phase 2 — stream tool-informed response:
-        Only enters when tool_calls actually occurred. The model's final answer
-        is streamed via astream() so the frontend sees token-by-token output.
+    Because Phase 1 is already streaming, every response path produces
+    token-by-token output — no double API call needed.
     """
     llm = _get_llm()
     tools = get_tools()
     model_with_tools = llm.bind_tools(tools)
 
-    tool_calls_occurred = False
-
     for _ in range(max_tool_rounds):
+        # Collect content chunks and tool-call fragments from the stream
+        content_chunks: list[str] = []
+        tool_call_fragments: dict[int, dict[str, str]] = {}
+
         try:
-            response: AIMessage = await model_with_tools.ainvoke(messages)
+            async for chunk in model_with_tools.astream(messages):
+                # Accumulate text content
+                if chunk.content:
+                    content_chunks.append(chunk.content)
+                    yield chunk.content
+
+                # Accumulate incremental tool-call data
+                if chunk.tool_call_chunks:
+                    for tcc in chunk.tool_call_chunks:
+                        idx = tcc["index"]
+                        if idx not in tool_call_fragments:
+                            tool_call_fragments[idx] = {
+                                "id": "",
+                                "name": "",
+                                "args": "",
+                            }
+                        frag = tool_call_fragments[idx]
+                        if tcc.get("id"):
+                            frag["id"] += tcc["id"]
+                        if tcc.get("name"):
+                            frag["name"] += tcc["name"]
+                        if tcc.get("args"):
+                            frag["args"] += tcc["args"]
         except Exception:
             logger.warning(
                 "Tool calling not supported, falling back to plain streaming",
                 exc_info=True,
             )
             async for chunk in llm.astream(messages):
-                yield chunk
+                if chunk.content:
+                    yield chunk.content
             return
 
-        if not response.tool_calls:
-            if tool_calls_occurred:
-                # Tools were called and results fed back. The final answer
-                # comes from streaming the model WITHOUT prepending its own
-                # non-streaming response — otherwise it has nothing new to say.
-                async for chunk in llm.astream(messages):
-                    if chunk.content:
-                        yield chunk.content
-            else:
-                # Direct answer, no tool calls needed.
-                if response.content:
-                    yield response.content
+        if not tool_call_fragments:
+            # No tool calls — everything we just streamed is the final answer.
+            # Reconstruct the AIMessage so it can be persisted to history.
+            response = AIMessage(content="".join(content_chunks))
+            messages.append(response)
             return
 
-        tool_calls_occurred = True
+        # Reconstruct full tool calls from fragments
+        tool_calls: list[ToolCall] = []
+        for idx in sorted(tool_call_fragments):
+            frag = tool_call_fragments[idx]
+            tool_calls.append({
+                "name": frag["name"],
+                "args": json.loads(frag["args"]) if frag["args"] else {},
+                "id": frag["id"] or f"call_{idx}",
+                "type": "tool_call",
+            })
+
+        collected_content = "".join(content_chunks)
+        response = AIMessage(content=collected_content, tool_calls=tool_calls)
         messages.append(response)
 
-        for tc in response.tool_calls:
+        for tc in tool_calls:
             tool_obj = get_tool_by_name(tc["name"])
             result = await tool_obj.ainvoke(tc["args"])
             result_str = (
@@ -101,8 +129,3 @@ async def stream_chat_with_tools(
                 else result
             )
             messages.append(ToolMessage(content=result_str, tool_call_id=tc["id"]))
-
-    # Max rounds exhausted — stream whatever the model produces
-    async for chunk in llm.astream(messages):
-        if chunk.content:
-            yield chunk.content

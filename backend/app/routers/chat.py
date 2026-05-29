@@ -1,4 +1,5 @@
 import json
+import traceback
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime, timezone
@@ -240,7 +241,6 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
                 yield f"data: {json.dumps({'type': 'error', 'content': '模型返回了空响应'})}\n\n"
 
         except Exception as e:
-            import traceback
             yield f"data: {json.dumps({'type': 'error', 'content': f'{e}\n{traceback.format_exc()}'})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
