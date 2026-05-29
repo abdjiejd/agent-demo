@@ -8,9 +8,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select, func as sa_func
 
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
 from app.database.session import AsyncSessionLocal
 from app.database.models import ChatSession, ChatMessage
-from app.services.llm import stream_chat, SYSTEM_PROMPT
+from app.services.llm import stream_chat_with_tools, SYSTEM_PROMPT
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -161,6 +163,23 @@ async def list_messages(request: Request, session_id: str):
         ]
 
 
+def _db_messages_to_langchain(
+    db_messages: list[ChatMessage],
+) -> list:
+    """Convert DB-stored ChatMessage rows to LangChain message objects.
+
+    Tool-calling messages are not persisted to DB, so only user/assistant
+    messages are converted here.
+    """
+    langchain_messages: list = [SystemMessage(content=SYSTEM_PROMPT)]
+    for m in db_messages:
+        if m.role == "user":
+            langchain_messages.append(HumanMessage(content=m.content))
+        elif m.role == "assistant":
+            langchain_messages.append(AIMessage(content=m.content))
+    return langchain_messages
+
+
 @router.post("/sessions/{session_id}/messages")
 async def send_message(request: Request, session_id: str, body: SendMessageRequest):
     fingerprint = request.state.fingerprint
@@ -179,7 +198,7 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
         db.add(user_msg)
         await db.flush()
 
-        # Fetch recent 10 messages (5 rounds) for context, excluding the one just saved
+        # Fetch recent 10 messages (5 rounds) for context
         history_stmt = (
             select(ChatMessage)
             .where(ChatMessage.session_id == session_id)
@@ -196,33 +215,33 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
 
         await db.commit()
 
-    # Build messages array for LLM
-    llm_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for m in history_messages:
-        llm_messages.append({"role": m.role, "content": m.content})
-    # The last user message (already saved) is the current query
-    # It's already in history_messages since we saved it before querying
+    # Convert to LangChain messages
+    llm_messages = _db_messages_to_langchain(history_messages)
 
     async def event_stream() -> AsyncGenerator[str, None]:
         full_response = ""
         try:
-            async for chunk in stream_chat(llm_messages):
+            async for chunk in stream_chat_with_tools(llm_messages):
                 full_response += chunk
                 yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
 
             # Save assistant message in a new DB session
-            async with AsyncSessionLocal() as save_db:
-                assistant_msg = ChatMessage(
-                    session_id=session_id,
-                    role="assistant",
-                    content=full_response,
-                )
-                save_db.add(assistant_msg)
-                await save_db.commit()
-                yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
+            if full_response.strip():
+                async with AsyncSessionLocal() as save_db:
+                    assistant_msg = ChatMessage(
+                        session_id=session_id,
+                        role="assistant",
+                        content=full_response,
+                    )
+                    save_db.add(assistant_msg)
+                    await save_db.commit()
+                    yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'error', 'content': '模型返回了空响应'})}\n\n"
 
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+            import traceback
+            yield f"data: {json.dumps({'type': 'error', 'content': f'{e}\n{traceback.format_exc()}'})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
 
