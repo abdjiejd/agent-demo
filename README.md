@@ -96,10 +96,10 @@ pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env 填入数据库和 API 密钥
 
-uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
 ```
 
-接口文档自动生成：访问 `http://localhost:8080/docs`
+接口文档自动生成：访问 `http://localhost:8082/docs`
 
 ### 3. 前端
 
@@ -122,7 +122,7 @@ npm run dev
 ```bash
 cd backend
 venv\Scripts\activate     # Windows 激活虚拟环境
-uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
 ```
 
 ### 前端
