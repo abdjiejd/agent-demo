@@ -1,7 +1,7 @@
 mysqldump: [Warning] Using a password on the command line interface can be insecure.
 -- MySQL dump 10.13  Distrib 8.0.34, for Win64 (x86_64)
 --
--- Host: 182.92.63.136    Database: chat_demo
+-- Host: <your-host>    Database: chat_demo
 -- ------------------------------------------------------
 -- Server version	8.0.27
 

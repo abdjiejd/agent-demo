@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 
+# 初始化模板（包含密钥，不提交）
+INIT.md
+
 # Claude Code
 .claude/
 
@@ -28,6 +31,3 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
-
-# 残留文件
-backend/=1.68.0

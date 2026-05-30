@@ -102,7 +102,7 @@ export const useChatStore = defineStore("chat", () => {
     const deviceId = getDeviceId()
 
     try {
-      const response = await fetch(`http://localhost:8082/api/chat/sessions/${sessionId}/messages`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:8082/api"}/chat/sessions/${sessionId}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

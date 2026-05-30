@@ -3,11 +3,18 @@ from pydantic import Field
 
 
 class Settings(BaseSettings):
+    # 项目名称
+    PROJECT_NAME: str = "Chat Demo"
+
+    # 服务端口
+    SERVER_PORT: int = 8082
+    FRONTEND_PORT: int = 8081
+
     # MySQL
-    MYSQL_HOST: str = "182.92.63.136"
+    MYSQL_HOST: str = "127.0.0.1"
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "root"
-    MYSQL_PASSWORD: str = "PaiSmart2025"
+    MYSQL_PASSWORD: str = ""
     MYSQL_DATABASE: str = "data_agent"
 
     # Ark LLM

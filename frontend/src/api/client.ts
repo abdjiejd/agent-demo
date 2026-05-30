@@ -2,7 +2,7 @@ import axios from "axios"
 import { useFingerprint } from "@/composables/useFingerprint"
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:8082/api",
+  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:8082/api",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 })
