@@ -3,7 +3,6 @@ import { ref } from "vue"
 import apiClient from "@/api/client"
 
 export interface UserProfile {
-  id: number
   fingerprint: string
   role: string
   username: string | null

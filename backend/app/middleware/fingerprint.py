@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from app.database.session import AsyncSessionLocal
-from app.database.models import AnonymousUser
+from app.database.models import User
 
 
 class FingerprintMiddleware(BaseHTTPMiddleware):
@@ -21,13 +21,13 @@ class FingerprintMiddleware(BaseHTTPMiddleware):
 
         # 从数据库查找或创建用户
         async with AsyncSessionLocal() as db:
-            user = await db.get(AnonymousUser, fingerprint)
+            user = await db.get(User, fingerprint)
             if user:
                 user.visit_count = user.visit_count + 1
                 user.ip = request.client.host if request.client else None
                 user.user_agent = request.headers.get("User-Agent")
             else:
-                user = AnonymousUser(
+                user = User(
                     fingerprint=fingerprint,
                     ip=request.client.host if request.client else None,
                     user_agent=request.headers.get("User-Agent"),
