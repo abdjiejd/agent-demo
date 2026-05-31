@@ -7,6 +7,8 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Any
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +36,9 @@ class LogContext:
 _context: ContextVar[LogContext | None] = ContextVar("log_context", default=None)
 
 
-def start(fingerprint: str, session_id: str, title: str) -> LogContext:
+def start(fingerprint: str, session_id: str, title: str) -> LogContext | None:
+    if not settings.LOG_LLM:
+        return None
     ctx = LogContext(fingerprint, session_id, title)
     _context.set(ctx)
     return ctx

@@ -67,6 +67,8 @@ def _tools_to_dicts(tools) -> list[dict]:
 
 
 def _log_request(messages: list, tools=None, round_num: int = 1):
+    if not settings.LOG_LLM:
+        return
     llm = _get_llm()
     body: dict = {
         "type": "request",
@@ -83,6 +85,8 @@ def _log_request(messages: list, tools=None, round_num: int = 1):
 
 
 def _log_response(content: str, tool_calls=None, round_num: int = 1, elapsed_ms: float = 0):
+    if not settings.LOG_LLM:
+        return
     message: dict = {"role": "assistant", "content": content or None}
     if tool_calls:
         message["tool_calls"] = [

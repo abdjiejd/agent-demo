@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     MYSQL_PASSWORD: str = ""
     MYSQL_DATABASE: str = "data_agent"
 
+    # 日志开关
+    LOG_LLM: bool = True
+
     # Ark LLM
     ARK_API_KEY: str = Field(default="", alias="api_key")
     ARK_MODEL: str = Field(default="", alias="model")
