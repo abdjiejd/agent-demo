@@ -5,6 +5,7 @@ import apiClient from "@/api/client"
 export interface UserProfile {
   id: number
   fingerprint: string
+  role: string
   username: string | null
   email: string | null
   phone: string | null
@@ -12,6 +13,19 @@ export interface UserProfile {
   bio: string | null
   created_at: string
   updated_at: string
+}
+
+export interface AdminUser {
+  fingerprint: string
+  ip: string | null
+  visit_count: number
+  role: string
+  username: string | null
+  email: string | null
+  phone: string | null
+  bio: string | null
+  first_seen: string | null
+  last_seen: string | null
 }
 
 export const useProfileStore = defineStore("profile", () => {
@@ -43,5 +57,14 @@ export const useProfileStore = defineStore("profile", () => {
     }
   }
 
-  return { profile, loading, fetchProfile, updateProfile }
+  async function fetchAllUsers(): Promise<AdminUser[]> {
+    const res = await apiClient.get<AdminUser[]>("/admin/users")
+    return res.data
+  }
+
+  async function adminUpdateUser(fingerprint: string, data: Partial<AdminUser>) {
+    await apiClient.put(`/admin/users/${fingerprint}`, data)
+  }
+
+  return { profile, loading, fetchProfile, updateProfile, fetchAllUsers, adminUpdateUser }
 })

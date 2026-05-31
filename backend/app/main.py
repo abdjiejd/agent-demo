@@ -40,5 +40,6 @@ app.add_middleware(FingerprintMiddleware)
 
 # 路由
 app.include_router(users.router)
+app.include_router(users.admin_router)
 app.include_router(chat_router.router)
 app.include_router(profiles.router)

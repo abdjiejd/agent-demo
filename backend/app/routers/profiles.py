@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/profiles", tags=["profiles"])
 class ProfileOut(BaseModel):
     id: int
     fingerprint: str
+    role: str = "user"
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None

@@ -33,6 +33,7 @@ class UserProfile(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     fingerprint = Column(String(64), ForeignKey("anonymous_users.fingerprint"), nullable=False, unique=True, index=True)
+    role = Column(String(32), nullable=False, default="user")
     username = Column(String(50), nullable=True)
     email = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=True)
