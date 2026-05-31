@@ -1,12 +1,14 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Request, HTTPException
+from math import ceil
+
+from fastapi import APIRouter, Request, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func as sa_func
 
 from app.database.session import AsyncSessionLocal
-from app.database.models import User
+from app.database.models import User, LlmLog
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 admin_router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -104,3 +106,54 @@ async def update_user(fingerprint: str, body: AdminUserUpdate, request: Request)
 
         await db.commit()
         return {"message": "ok"}
+
+
+class LogOut(BaseModel):
+    id: int
+    title: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LogDetailOut(LogOut):
+    data: str
+
+
+@admin_router.get("/logs")
+async def list_logs(
+    request: Request,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    await _check_admin(request)
+    async with AsyncSessionLocal() as db:
+        count_stmt = select(sa_func.count(LlmLog.id))
+        total = (await db.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            select(LlmLog)
+            .order_by(LlmLog.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await db.execute(stmt)
+        logs = result.scalars().all()
+
+        return {
+            "items": [LogOut(id=log.id, title=log.title, created_at=log.created_at) for log in logs],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": ceil(total / page_size) if page_size else 0,
+        }
+
+
+@admin_router.get("/logs/{log_id}")
+async def get_log_detail(log_id: int, request: Request):
+    await _check_admin(request)
+    async with AsyncSessionLocal() as db:
+        log = await db.get(LlmLog, log_id)
+        if not log:
+            raise HTTPException(status_code=404, detail="日志不存在")
+        return LogDetailOut(id=log.id, title=log.title, data=log.data, created_at=log.created_at)
