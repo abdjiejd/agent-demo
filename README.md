@@ -1,5 +1,3 @@
-# Chat Demo
-
 一个基于大语言模型的智能问答项目，支持免注册使用、多会话管理和上下文对话，方便进行二次开发和功能扩展。
 
 ## 技术栈
@@ -70,64 +68,6 @@
 
 ## 快速开始
 
-### 1. 数据库
-
-创建 MySQL 数据库：
-
-```sql
-CREATE DATABASE IF NOT EXISTS data_agent CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-表结构在启动时自动创建，也可手动导入：
-
-```bash
-mysql -h your-host -u your-user -p data_agent < sql/chat_demo_schema.sql
-```
-
-### 2. 后端
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# 复制并修改配置
-cp .env.example .env
-# 编辑 .env 填入数据库和 API 密钥
-
-uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
-```
-
-接口文档自动生成：访问 `http://localhost:8082/docs`
-
-### 3. 前端
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-访问 `http://localhost:8081`
-
-## 配置说明
-
-后端配置通过环境变量或 `.env` 文件读取，参考 [backend/.env.example](backend/.env.example)。
-
-## 启动命令
-
-### 后端
-
-```bash
-cd backend
-venv\Scripts\activate     # Windows 激活虚拟环境
-uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
-```
-
-### 前端
-
-```bash
-cd frontend
-npm run dev
-```
+1. 复制 [INIT.example.md](INIT.example.md) 为 `INIT.md`
+2. 填入你的数据库和大模型配置
+3. 对 AI 说"按 INIT.md 初始化项目"
