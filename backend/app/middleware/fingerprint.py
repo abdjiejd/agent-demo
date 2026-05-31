@@ -23,7 +23,7 @@ class FingerprintMiddleware(BaseHTTPMiddleware):
         async with AsyncSessionLocal() as db:
             user = await db.get(AnonymousUser, fingerprint)
             if user:
-                user.visit_count = AnonymousUser.visit_count + 1
+                user.visit_count = user.visit_count + 1
                 user.ip = request.client.host if request.client else None
                 user.user_agent = request.headers.get("User-Agent")
             else:

@@ -1,4 +1,4 @@
-const STORAGE_KEY = "device_id"
+const STORAGE_KEY = `${import.meta.env.VITE_PROJECT_NAME || "default"}_device_id`
 
 // 简化版设备指纹：合并多个浏览器特征生成哈希
 function generateFingerprint(): string {

@@ -1,3 +1,5 @@
+# agent-demo
+
 一个基于大语言模型的智能问答项目，支持免注册使用、多会话管理和上下文对话，方便进行二次开发和功能扩展。
 
 ## 技术栈
@@ -71,3 +73,17 @@
 1. 复制 [INIT.example.md](INIT.example.md) 为 `INIT.md`
 2. 填入你的数据库和大模型配置
 3. 对 AI 说"按 INIT.md 初始化项目"
+
+## 启动命令
+
+### 后端
+```bash
+cd backend
+venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
+```
+
+### 前端
+```bash
+cd frontend
+npm run dev
+```

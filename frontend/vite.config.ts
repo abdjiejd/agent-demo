@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: Number(env.VITE_SERVER_PORT) || 8081,
+      strictPort: true,
       proxy: {},
     },
   }
