@@ -21,6 +21,92 @@ SYSTEM_PROMPT = (
 )
 
 
+def _messages_to_dicts(messages: list) -> list[dict]:
+    """Convert LangChain messages to OpenAI-compatible dicts for logging."""
+    result = []
+    for msg in messages:
+        d: dict = {"role": msg.type, "content": msg.content or None}
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            d["tool_calls"] = [
+                {
+                    "id": tc.get("id", ""),
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": tc["args"] if isinstance(tc["args"], str) else json.dumps(tc["args"], ensure_ascii=False),
+                    },
+                }
+                for tc in msg.tool_calls
+            ]
+        if hasattr(msg, "tool_call_id") and msg.tool_call_id:
+            d["tool_call_id"] = msg.tool_call_id
+        result.append(d)
+    return result
+
+
+def _tools_to_dicts(tools) -> list[dict]:
+    """Convert LangChain tools to OpenAI function format for logging."""
+    result = []
+    for t in tools:
+        try:
+            params = t.args_schema.model_json_schema()
+        except Exception:
+            params = {}
+        result.append({
+            "type": "function",
+            "function": {
+                "name": t.name,
+                "description": t.description,
+                "parameters": params,
+            },
+        })
+    return result
+
+
+def _log_request(messages: list, tools=None, round: int = 1):
+    llm = _get_llm()
+    body: dict = {
+        "type": "request",
+        "round": round,
+        "model": llm.model_name,
+        "messages": _messages_to_dicts(messages),
+        "stream": True,
+    }
+    if tools:
+        body["tools"] = _tools_to_dicts(tools)
+        body["tool_choice"] = "auto"
+    logger.info(json.dumps(body, ensure_ascii=False, indent=2))
+
+
+def _log_response(content: str, tool_calls=None, round: int = 1):
+    message: dict = {"role": "assistant", "content": content or None}
+    if tool_calls:
+        message["tool_calls"] = [
+            {
+                "id": tc["id"],
+                "type": "function",
+                "function": {
+                    "name": tc["name"],
+                    "arguments": tc["args"] if isinstance(tc["args"], str) else json.dumps(tc["args"], ensure_ascii=False),
+                },
+            }
+            for tc in tool_calls
+        ]
+    body: dict = {
+        "type": "response",
+        "round": round,
+        "model": _get_llm().model_name,
+        "choices": [
+            {
+                "index": 0,
+                "finish_reason": "tool_calls" if tool_calls else "stop",
+                "message": message,
+            }
+        ],
+    }
+    logger.info(json.dumps(body, ensure_ascii=False, indent=2))
+
+
 def _get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
@@ -35,9 +121,13 @@ def _get_llm() -> ChatOpenAI:
 async def stream_chat(messages: list) -> AsyncIterator[str]:
     """Simple streaming without tools."""
     llm = _get_llm()
+    _log_request(messages)
+    content_chunks: list[str] = []
     async for chunk in llm.astream(messages):
         if chunk.content:
+            content_chunks.append(chunk.content)
             yield chunk.content
+    _log_response("".join(content_chunks))
 
 
 async def stream_chat_with_tools(
@@ -58,10 +148,11 @@ async def stream_chat_with_tools(
     model_with_tools = llm.bind_tools(tools)
     max_rounds = settings.TOOL_CALL_MAX_ROUNDS
 
-    for _ in range(max_rounds):
+    for round_num in range(1, max_rounds + 1):
         # Collect content chunks and tool-call fragments from the stream
         content_chunks: list[str] = []
         tool_call_fragments: dict[int, dict[str, str]] = {}
+        _log_request(messages, tools, round=round_num)
 
         try:
             async for chunk in model_with_tools.astream(messages):
@@ -102,6 +193,7 @@ async def stream_chat_with_tools(
             # Reconstruct the AIMessage so it can be persisted to history.
             response = AIMessage(content="".join(content_chunks))
             messages.append(response)
+            _log_response("".join(content_chunks), round=round_num)
             return
 
         # Reconstruct full tool calls from fragments
@@ -116,6 +208,7 @@ async def stream_chat_with_tools(
             })
 
         collected_content = "".join(content_chunks)
+        _log_response(collected_content, tool_calls, round=round_num)
         response = AIMessage(content=collected_content, tool_calls=tool_calls)
         messages.append(response)
 
