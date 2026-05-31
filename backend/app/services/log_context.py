@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import json
-import logging
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Any
 
 from app.config import settings
-
-logger = logging.getLogger(__name__)
+from app.database.models import LlmLog
+from app.database.session import AsyncSessionLocal
 
 
 class LogContext:
@@ -66,7 +65,7 @@ def _fmt_time(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{dt.microsecond // 1000:03d}"
 
 
-def finalize(error: str | None = None):
+async def finalize(error: str | None = None):
     ctx = _context.get(None)
     if ctx is None:
         return
@@ -86,6 +85,11 @@ def finalize(error: str | None = None):
             "total_rounds": ctx.total_rounds,
             "error_msg": error,
         }
-        logger.info(json.dumps(output, ensure_ascii=False, indent=2))
+        async with AsyncSessionLocal() as log_db:
+            log_db.add(LlmLog(
+                title=output["title"],
+                data=json.dumps(output, ensure_ascii=False),
+            ))
+            await log_db.commit()
     finally:
         _context.set(None)

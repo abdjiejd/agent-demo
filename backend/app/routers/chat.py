@@ -249,7 +249,7 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
             error_info = f"{e}\n{traceback.format_exc()}"
             yield f"data: {json.dumps({'type': 'error', 'content': error_info})}\n\n"
         finally:
-            log_context.finalize(error_info)
+            await log_context.finalize(error_info)
             yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
