@@ -12,6 +12,7 @@ from langchain_openai import ChatOpenAI
 
 from app.config import settings
 from app.services.tools import get_tools, get_tool_by_name
+from app.services import log_context
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def _log_request(messages: list, tools=None, round_num: int = 1):
     body: dict = {
         "type": "request",
         "round": round_num,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": log_context._fmt_time(datetime.now()),
         "model": llm.model_name,
         "messages": _messages_to_dicts(messages),
         "stream": True,
@@ -78,7 +79,7 @@ def _log_request(messages: list, tools=None, round_num: int = 1):
     if tools:
         body["tools"] = _tools_to_dicts(tools)
         body["tool_choice"] = "auto"
-    logger.info(json.dumps(body, ensure_ascii=False, indent=2))
+    log_context.append_entry(body)
 
 
 def _log_response(content: str, tool_calls=None, round_num: int = 1, elapsed_ms: float = 0):
@@ -98,7 +99,7 @@ def _log_response(content: str, tool_calls=None, round_num: int = 1, elapsed_ms:
     body: dict = {
         "type": "response",
         "round": round_num,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": log_context._fmt_time(datetime.now()),
         "model": _get_llm().model_name,
         "elapsed_ms": round(elapsed_ms, 2),
         "choices": [
@@ -109,7 +110,7 @@ def _log_response(content: str, tool_calls=None, round_num: int = 1, elapsed_ms:
             }
         ],
     }
-    logger.info(json.dumps(body, ensure_ascii=False, indent=2))
+    log_context.append_entry(body)
 
 
 def _get_llm() -> ChatOpenAI:
@@ -203,6 +204,7 @@ async def stream_chat_with_tools(
             messages.append(response)
             elapsed_ms = (time.perf_counter() - start) * 1000
             _log_response("".join(content_chunks), round_num=round_num, elapsed_ms=elapsed_ms)
+            log_context.set_rounds(round_num)
             return
 
         # Reconstruct full tool calls from fragments

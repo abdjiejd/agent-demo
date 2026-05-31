@@ -14,6 +14,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.database.session import AsyncSessionLocal
 from app.database.models import ChatSession, ChatMessage
 from app.services.llm import stream_chat_with_tools, SYSTEM_PROMPT
+from app.services import log_context
 from app.config import settings
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -222,7 +223,9 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
     llm_messages = _db_messages_to_langchain(history_messages)
 
     async def event_stream() -> AsyncGenerator[str, None]:
+        log_context.start(fingerprint, session_id, body.content)
         full_response = ""
+        error_info = None
         try:
             async for chunk in stream_chat_with_tools(llm_messages):
                 full_response += chunk
@@ -243,8 +246,10 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
                 yield f"data: {json.dumps({'type': 'error', 'content': '模型返回了空响应'})}\n\n"
 
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'content': f'{e}\n{traceback.format_exc()}'})}\n\n"
+            error_info = f"{e}\n{traceback.format_exc()}"
+            yield f"data: {json.dumps({'type': 'error', 'content': error_info})}\n\n"
         finally:
+            log_context.finalize(error_info)
             yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
