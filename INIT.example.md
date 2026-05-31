@@ -1,6 +1,6 @@
 # 复制为 INIT.md，填入下方数据后对 AI 说"按 INIT.md 初始化项目"
 
-> 共 4 组配置 11 个必填项，请完整填写，不要遗漏。
+> 共 4 组配置 13 个必填项，请完整填写，不要遗漏。
 
 ### ① 项目名称
 
@@ -14,6 +14,8 @@
 |---|---|
 | SERVER_PORT | `[ 填后端端口，默认8082 ]` |
 | FRONTEND_PORT | `[ 填前端端口，默认8081 ]` |
+| CONTEXT_ROUNDS | `[ 填记忆轮数，默认5 ]` |
+| TOOL_CALL_MAX_ROUNDS | `[ 填工具调用轮数，默认5 ]` |
 
 ### ③ 数据库配置 (MySQL)
 
@@ -53,6 +55,8 @@ SOURCE sql/chat_demo_schema.sql;
 PROJECT_NAME=<用户值>
 SERVER_PORT=<用户值>
 FRONTEND_PORT=<用户值>
+CONTEXT_ROUNDS=<用户值>
+TOOL_CALL_MAX_ROUNDS=<用户值>
 MYSQL_HOST=<用户值>
 MYSQL_PORT=<用户值>
 MYSQL_USER=<用户值>

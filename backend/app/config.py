@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     SERVER_PORT: int = 8082
     FRONTEND_PORT: int = 8081
 
+    # 上下文记忆轮数
+    CONTEXT_ROUNDS: int = 5
+
+    # 工具调用最大轮数
+    TOOL_CALL_MAX_ROUNDS: int = 5
+
     # MySQL
     MYSQL_HOST: str = "127.0.0.1"
     MYSQL_PORT: int = 3306

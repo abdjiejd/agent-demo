@@ -43,7 +43,6 @@ async def stream_chat(messages: list) -> AsyncIterator[str]:
 
 async def stream_chat_with_tools(
     messages: list,
-    max_tool_rounds: int = 5,
 ) -> AsyncIterator[str]:
     """Stream a chat response with tool-calling support.
 
@@ -58,8 +57,9 @@ async def stream_chat_with_tools(
     llm = _get_llm()
     tools = get_tools()
     model_with_tools = llm.bind_tools(tools)
+    max_rounds = settings.TOOL_CALL_MAX_ROUNDS
 
-    for _ in range(max_tool_rounds):
+    for _ in range(max_rounds):
         # Collect content chunks and tool-call fragments from the stream
         content_chunks: list[str] = []
         tool_call_fragments: dict[int, dict[str, str]] = {}

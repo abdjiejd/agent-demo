@@ -14,6 +14,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.database.session import AsyncSessionLocal
 from app.database.models import ChatSession, ChatMessage
 from app.services.llm import stream_chat_with_tools, SYSTEM_PROMPT
+from app.config import settings
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -199,12 +200,13 @@ async def send_message(request: Request, session_id: str, body: SendMessageReque
         db.add(user_msg)
         await db.flush()
 
-        # Fetch recent 10 messages (5 rounds) for context
+        # Fetch recent N*2+1 messages for context (+1 = current message, N*2 = N rounds history)
+        limit = settings.CONTEXT_ROUNDS * 2 + 1
         history_stmt = (
             select(ChatMessage)
             .where(ChatMessage.session_id == session_id)
             .order_by(ChatMessage.created_at.desc())
-            .limit(10)
+            .limit(limit)
         )
         history_result = await db.execute(history_stmt)
         history_messages = list(reversed(history_result.scalars().all()))
