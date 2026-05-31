@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from collections.abc import AsyncIterator
+from datetime import datetime
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.messages.tool import ToolCall
@@ -63,11 +65,12 @@ def _tools_to_dicts(tools) -> list[dict]:
     return result
 
 
-def _log_request(messages: list, tools=None, round: int = 1):
+def _log_request(messages: list, tools=None, round_num: int = 1):
     llm = _get_llm()
     body: dict = {
         "type": "request",
-        "round": round,
+        "round": round_num,
+        "timestamp": datetime.now().isoformat(),
         "model": llm.model_name,
         "messages": _messages_to_dicts(messages),
         "stream": True,
@@ -78,7 +81,7 @@ def _log_request(messages: list, tools=None, round: int = 1):
     logger.info(json.dumps(body, ensure_ascii=False, indent=2))
 
 
-def _log_response(content: str, tool_calls=None, round: int = 1):
+def _log_response(content: str, tool_calls=None, round_num: int = 1, elapsed_ms: float = 0):
     message: dict = {"role": "assistant", "content": content or None}
     if tool_calls:
         message["tool_calls"] = [
@@ -94,8 +97,10 @@ def _log_response(content: str, tool_calls=None, round: int = 1):
         ]
     body: dict = {
         "type": "response",
-        "round": round,
+        "round": round_num,
+        "timestamp": datetime.now().isoformat(),
         "model": _get_llm().model_name,
+        "elapsed_ms": round(elapsed_ms, 2),
         "choices": [
             {
                 "index": 0,
@@ -123,11 +128,13 @@ async def stream_chat(messages: list) -> AsyncIterator[str]:
     llm = _get_llm()
     _log_request(messages)
     content_chunks: list[str] = []
+    start = time.perf_counter()
     async for chunk in llm.astream(messages):
         if chunk.content:
             content_chunks.append(chunk.content)
             yield chunk.content
-    _log_response("".join(content_chunks))
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    _log_response("".join(content_chunks), elapsed_ms=elapsed_ms)
 
 
 async def stream_chat_with_tools(
@@ -152,9 +159,10 @@ async def stream_chat_with_tools(
         # Collect content chunks and tool-call fragments from the stream
         content_chunks: list[str] = []
         tool_call_fragments: dict[int, dict[str, str]] = {}
-        _log_request(messages, tools, round=round_num)
 
         try:
+            _log_request(messages, tools, round_num=round_num)
+            start = time.perf_counter()
             async for chunk in model_with_tools.astream(messages):
                 # Accumulate text content
                 if chunk.content:
@@ -193,7 +201,8 @@ async def stream_chat_with_tools(
             # Reconstruct the AIMessage so it can be persisted to history.
             response = AIMessage(content="".join(content_chunks))
             messages.append(response)
-            _log_response("".join(content_chunks), round=round_num)
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            _log_response("".join(content_chunks), round_num=round_num, elapsed_ms=elapsed_ms)
             return
 
         # Reconstruct full tool calls from fragments
@@ -208,7 +217,8 @@ async def stream_chat_with_tools(
             })
 
         collected_content = "".join(content_chunks)
-        _log_response(collected_content, tool_calls, round=round_num)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        _log_response(collected_content, tool_calls, round_num=round_num, elapsed_ms=elapsed_ms)
         response = AIMessage(content=collected_content, tool_calls=tool_calls)
         messages.append(response)
 
