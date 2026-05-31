@@ -9,11 +9,15 @@ const chatStore = useChatStore()
 
 onMounted(async () => {
   await chatStore.fetchSessions()
-  if (chatStore.sessions.length === 0) {
+  const stillExists = chatStore.currentSessionId &&
+    chatStore.sessions.some((s) => s.id === chatStore.currentSessionId)
+  if (stillExists) {
+    await chatStore.fetchMessages(chatStore.currentSessionId!)
+  } else if (chatStore.sessions.length > 0) {
+    await chatStore.switchSession(chatStore.sessions[0].id)
+  } else {
     const id = await chatStore.createSession()
     await chatStore.switchSession(id)
-  } else {
-    await chatStore.switchSession(chatStore.sessions[0].id)
   }
 })
 </script>
