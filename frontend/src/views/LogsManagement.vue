@@ -5,6 +5,8 @@ import apiClient from "@/api/client"
 
 interface LogItem {
   id: number
+  fingerprint: string | null
+  username: string | null
   title: string | null
   created_at: string
 }
@@ -77,6 +79,7 @@ onMounted(loadLogs)
     <h2>日志</h2>
     <el-table :data="items" v-loading="loading" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="70" align="center" />
+      <el-table-column prop="username" label="用户" width="150" show-overflow-tooltip />
       <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
       <el-table-column prop="created_at" label="时间" width="180" />
       <el-table-column label="操作" width="100" fixed="right">
@@ -100,6 +103,8 @@ onMounted(loadLogs)
       <template v-if="detail && !detailLoading">
         <div class="detail-meta">
           <span>ID: {{ detail.id }}</span>
+          <span class="detail-sep">|</span>
+          <span>用户: {{ detail.username || "未知" }}</span>
           <span class="detail-sep">|</span>
           <span>标题: {{ detail.title || "无" }}</span>
           <span class="detail-sep">|</span>

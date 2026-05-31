@@ -5,7 +5,7 @@ from math import ceil
 
 from fastapi import APIRouter, Request, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, func as sa_func
+from sqlalchemy import select, func as sa_func, outerjoin
 
 from app.database.session import AsyncSessionLocal
 from app.database.models import User, LlmLog
@@ -110,6 +110,8 @@ async def update_user(fingerprint: str, body: AdminUserUpdate, request: Request)
 
 class LogOut(BaseModel):
     id: int
+    fingerprint: Optional[str] = None
+    username: Optional[str] = None
     title: Optional[str] = None
     created_at: datetime
 
@@ -132,16 +134,17 @@ async def list_logs(
         total = (await db.execute(count_stmt)).scalar() or 0
 
         stmt = (
-            select(LlmLog)
+            select(LlmLog, User.username)
+            .outerjoin(User, LlmLog.fingerprint == User.fingerprint)
             .order_by(LlmLog.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
         result = await db.execute(stmt)
-        logs = result.scalars().all()
+        rows = result.all()
 
         return {
-            "items": [LogOut(id=log.id, title=log.title, created_at=log.created_at) for log in logs],
+            "items": [LogOut(id=row.LlmLog.id, fingerprint=row.LlmLog.fingerprint, username=row.username, title=row.LlmLog.title, created_at=row.LlmLog.created_at) for row in rows],
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -156,4 +159,8 @@ async def get_log_detail(log_id: int, request: Request):
         log = await db.get(LlmLog, log_id)
         if not log:
             raise HTTPException(status_code=404, detail="日志不存在")
-        return LogDetailOut(id=log.id, title=log.title, data=log.data, created_at=log.created_at)
+        username = None
+        if log.fingerprint:
+            user = await db.get(User, log.fingerprint)
+            username = user.username if user else None
+        return LogDetailOut(id=log.id, fingerprint=log.fingerprint, username=username, title=log.title, data=log.data, created_at=log.created_at)

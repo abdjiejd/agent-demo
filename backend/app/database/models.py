@@ -50,6 +50,7 @@ class LlmLog(Base):
     __tablename__ = "llm_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    fingerprint = Column(String(64), nullable=True, index=True)
     title = Column(String(255), nullable=True, index=True)
     data = Column(Text, nullable=False)  # 完整 JSON 日志
     created_at = Column(DateTime, default=func.now(), nullable=False)

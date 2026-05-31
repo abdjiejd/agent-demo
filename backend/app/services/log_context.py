@@ -87,6 +87,7 @@ async def finalize(error: str | None = None):
         }
         async with AsyncSessionLocal() as log_db:
             log_db.add(LlmLog(
+                fingerprint=ctx.fingerprint,
                 title=output["title"],
                 data=json.dumps(output, ensure_ascii=False),
             ))
