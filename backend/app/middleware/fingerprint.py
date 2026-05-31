@@ -1,6 +1,9 @@
+import secrets
+
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.database.session import AsyncSessionLocal
 from app.database.models import User
@@ -26,15 +29,28 @@ class FingerprintMiddleware(BaseHTTPMiddleware):
                 user.visit_count = user.visit_count + 1
                 user.ip = request.client.host if request.client else None
                 user.user_agent = request.headers.get("User-Agent")
+                await db.commit()
             else:
-                user = User(
-                    fingerprint=fingerprint,
-                    ip=request.client.host if request.client else None,
-                    user_agent=request.headers.get("User-Agent"),
-                    visit_count=1,
-                )
-                db.add(user)
-            await db.commit()
+                try:
+                    default_username = "用户" + secrets.token_hex(3)
+                    user = User(
+                        fingerprint=fingerprint,
+                        ip=request.client.host if request.client else None,
+                        user_agent=request.headers.get("User-Agent"),
+                        visit_count=1,
+                        username=default_username,
+                    )
+                    db.add(user)
+                    await db.commit()
+                except IntegrityError:
+                    # 并发创建用户时可能发生主键冲突，回滚后重新查询
+                    await db.rollback()
+                    user = await db.get(User, fingerprint)
+                    if user:
+                        user.visit_count = user.visit_count + 1
+                        user.ip = request.client.host if request.client else None
+                        user.user_agent = request.headers.get("User-Agent")
+                    await db.commit()
 
         # 注入指纹到请求状态
         request.state.fingerprint = fingerprint

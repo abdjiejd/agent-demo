@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { onMounted } from "vue"
 import { useRouter } from "vue-router"
-import { useUserStore } from "@/stores/user"
 import { useProfileStore } from "@/stores/profile"
 
-const userStore = useUserStore()
-userStore.init()
-
 const profileStore = useProfileStore()
+const router = useRouter()
 
 onMounted(() => {
   profileStore.fetchProfile()
 })
-
-const router = useRouter()
 </script>
 
 <template>

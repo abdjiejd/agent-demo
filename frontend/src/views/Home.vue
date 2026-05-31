@@ -25,7 +25,9 @@ onMounted(async () => {
   if (!store.initialized) {
     await store.init()
   }
-  await Promise.all([chatStore.fetchSessions(), profileStore.fetchProfile()])
+  if (store.initialized) {
+    await Promise.all([chatStore.fetchSessions(), profileStore.fetchProfile()])
+  }
 })
 
 const totalMessages = computed(() =>
@@ -81,7 +83,13 @@ async function saveProfile() {
     </div>
 
     <div v-if="!store.userInfo" class="loading-state">
-      <p>加载中...</p>
+      <template v-if="store.initialized">
+        <p>加载失败</p>
+        <el-button size="small" @click="store.init(); chatStore.fetchSessions(); profileStore.fetchProfile()">重试</el-button>
+      </template>
+      <template v-else>
+        <p>加载中...</p>
+      </template>
     </div>
 
     <template v-else>
