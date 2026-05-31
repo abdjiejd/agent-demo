@@ -79,7 +79,7 @@
 ### 后端
 ```bash
 cd backend
-venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload
+venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8082 --reload --reload-include ".env"
 ```
 
 ### 前端

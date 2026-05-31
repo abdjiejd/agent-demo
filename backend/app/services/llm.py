@@ -16,9 +16,8 @@ logger = logging.getLogger(__name__)
 _llm: ChatOpenAI | None = None
 
 SYSTEM_PROMPT = (
-    "你是一个有用的AI助手，请用中文回答用户的问题。"
-    "你可以使用提供的工具来获取实时信息，例如查询天气。"
-    "当用户询问天气时，请使用 get_weather 工具查询后再回答。"
+    "你是一个有用的AI助手，请用中文回答用户的问题，你的回答要尽量简洁"
+    ""
 )
 
 
