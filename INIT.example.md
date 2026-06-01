@@ -6,14 +6,14 @@
 
 | 配置项 | 你的值（替换本列） |
 |---|---|
-| PROJECT_NAME | `[ 填项目名称，如：agent-demo ]` |
+| PROJECT_NAME | `[ 填项目名称 ]` |
 
 ### ② 数据库配置 (MySQL)
 
 | 配置项 | 你的值（替换本列） |
 |---|---|
 | MYSQL_HOST | `[ 填数据库IP ]` |
-| MYSQL_PORT | `[ 填端口，默认3306 ]` |
+| MYSQL_PORT | `[ 填端口 ]` |
 | MYSQL_USER | `[ 填用户名 ]` |
 | MYSQL_PASSWORD | `[ 填密码 ]` |
 | MYSQL_DATABASE | `[ 填数据库名 ]` |
@@ -23,12 +23,13 @@
 | 配置项 | 你的值（替换本列） |
 |---|---|
 | LLM_API_KEY | `[ 填API Key ]` |
-| LLM_MODEL | `[ 填模型ID ]` |
+| LLM_MODEL | `[ 填模型 ]` |
 | LLM_BASE_URL | `[ 填API地址 ]` |
 
 ---
 
 > 以下内容用户无需关注，是给 AI 看的初始化引导。
+> 注意！！！ 执行初始化项目之前，先让用户检查一遍以上信息是否正确
 
 ## AI 初始化步骤
 
