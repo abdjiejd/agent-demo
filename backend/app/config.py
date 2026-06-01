@@ -1,42 +1,34 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field, model_validator
 
 
 class Settings(BaseSettings):
     # 项目名称
-    PROJECT_NAME: str = ""
+    PROJECT_NAME: str
 
-    # 服务端口
+    # 服务端口（前端默认8081，后端默认8082）
     SERVER_PORT: int = 8082
     FRONTEND_PORT: int = 8081
 
-    # 上下文记忆轮数
+    # 上下文记忆轮数（默认5轮）
     CONTEXT_ROUNDS: int = 5
 
-    # 工具调用最大轮数
+    # 工具调用最大轮数（默认5轮）
     TOOL_CALL_MAX_ROUNDS: int = 5
 
     # MySQL
-    MYSQL_HOST: str = ""
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = ""
-    MYSQL_PASSWORD: str = ""
-    MYSQL_DATABASE: str = ""
+    MYSQL_HOST: str
+    MYSQL_PORT: int
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
+    MYSQL_DATABASE: str
 
-    # 日志开关
-    LOG_LLM: bool = True
+    # 日志开关（默认关闭）
+    LOG_LLM: bool = False
 
     # Ark LLM
-    ARK_API_KEY: str = Field(default="", alias="api_key")
-    ARK_MODEL: str = Field(default="", alias="model")
-    ARK_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
-
-    @model_validator(mode="after")
-    def _validate_not_empty(self):
-        for field_name in ("MYSQL_HOST", "MYSQL_PORT", "MYSQL_USER", "MYSQL_DATABASE"):
-            if getattr(self, field_name) == "" or getattr(self, field_name) is None:
-                raise ValueError(f"{field_name} 不能为空，请在 .env 中配置")
-        return self
+    ARK_API_KEY: str
+    ARK_MODEL: str
+    ARK_BASE_URL: str
 
     @property
     def database_url(self) -> str:
