@@ -37,7 +37,7 @@
 ```
 CREATE DATABASE IF NOT EXISTS <用户填的数据库名> CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE <用户填的数据库名>;
-SOURCE sql/chat_demo_schema.sql;
+SOURCE sql/schema.sql;
 ```
 
 ### 2. 生成后端 .env
