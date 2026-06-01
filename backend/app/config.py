@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     # 日志开关（默认关闭）
     LOG_LLM: bool = False
 
-    # Ark LLM
-    ARK_API_KEY: str
-    ARK_MODEL: str
-    ARK_BASE_URL: str
+    # LLM（兼容 OpenAI API 格式）
+    LLM_API_KEY: str
+    LLM_MODEL: str
+    LLM_BASE_URL: str
 
     @property
     def database_url(self) -> str:

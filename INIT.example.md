@@ -22,9 +22,9 @@
 
 | 配置项 | 你的值（替换本列） |
 |---|---|
-| ARK_API_KEY | `[ 填API Key ]` |
-| ARK_MODEL | `[ 填模型ID ]` |
-| ARK_BASE_URL | `[ 填API地址 ]` |
+| LLM_API_KEY | `[ 填API Key ]` |
+| LLM_MODEL | `[ 填模型ID ]` |
+| LLM_BASE_URL | `[ 填API地址 ]` |
 
 ---
 
@@ -49,9 +49,9 @@ MYSQL_PORT=<用户值>
 MYSQL_USER=<用户值>
 MYSQL_PASSWORD=<用户值>
 MYSQL_DATABASE=<用户值>
-ARK_API_KEY=<用户值>
-ARK_MODEL=<用户值>
-ARK_BASE_URL=<用户值>
+LLM_API_KEY=<用户值>
+LLM_MODEL=<用户值>
+LLM_BASE_URL=<用户值>
 ```
 
 ### 3. 生成前端 .env

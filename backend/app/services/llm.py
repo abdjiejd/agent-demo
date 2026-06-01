@@ -121,9 +121,9 @@ def _get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
         _llm = ChatOpenAI(
-            api_key=settings.ARK_API_KEY,
-            base_url=settings.ARK_BASE_URL,
-            model=settings.ARK_MODEL,
+            api_key=settings.LLM_API_KEY,
+            base_url=settings.LLM_BASE_URL,
+            model=settings.LLM_MODEL,
         )
     return _llm
 
